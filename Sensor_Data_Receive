@@ -1,0 +1,105 @@
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEServer.h>
+#include <stdlib.h>
+// See the following for generating UUIDs:
+// https://www.uuidgenerator.net/
+
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_PM25 "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define CHARACTERISTIC_CO2 "beb5483e-36e1-4688-n9w7-ea07361b26c9"
+#define CHARACTERISTIC_TEMP_C "beb5483e-36e1-7497-n9w7-ea07361b26c9"
+#define CHARACTERISTIC_HUMID "beb5483e-74e9-1234-n9w7-ea07361b26c9"
+#define CHARACTERISTIC_MOTION "ndw5493f-36e1-7499-n9w7-ea07361b26c9"
+
+BLEServer *pServer;
+BLEService *pService;
+BLECharacteristic *pCharacteristic_PM25;
+BLECharacteristic *pCharacteristic_CO2;
+BLECharacteristic *pCharacteristic_Temp_C;
+BLECharacteristic *pCharacteristic_Humid;
+BLECharacteristic *pCharacteristic_Motion;
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("Starting BLE Server!");
+    Serial2.begin(9600);
+
+  BLEDevice::init("ESP32-BLE-Server");
+  pServer = BLEDevice::createServer();
+  pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic_PM25 = pService->createCharacteristic(
+                                         CHARACTERISTIC_PM25,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+
+  pCharacteristic_CO2 = pService->createCharacteristic(
+                                         CHARACTERISTIC_CO2,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+
+  pCharacteristic_Temp_C = pService->createCharacteristic(
+                                         CHARACTERISTIC_TEMP_C,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+
+  pCharacteristic_Humid = pService->createCharacteristic(
+                                         CHARACTERISTIC_HUMID,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+
+  pCharacteristic_Motion = pService->createCharacteristic(
+                                        CHARACTERISTIC_MOTION,
+                                        BLECharacteristic::PROPERTY_READ |
+                                        BLECharacteristic::PROPERTY_WRITE
+                                      );                         
+
+  pCharacteristic_PM25->setValue("n/a");
+  pCharacteristic_CO2->setValue("n/a");
+  pCharacteristic_Temp_C->setValue("n/a");
+  pCharacteristic_Humid->setValue("n/a");
+  pCharacteristic_Motion->setValue("n/a");
+
+  pService->start();
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x12);
+  BLEDevice::startAdvertising();
+  pAdvertising->start();
+  Serial.println("Characteristic defined! Now you can read it in the Client!");
+}
+
+void loop()
+{
+  BLEDevice::startAdvertising();
+  delay(500);
+
+  Serial.println("\n\n\n");
+
+  std::string value = pCharacteristic_PM25->getValue();
+  Serial.print("The PM2.5 in [μg/m3]: ");
+  Serial.println(value.c_str());
+
+  std::string value_test = pCharacteristic_CO2->getValue();
+  Serial.print("The CO2 in PPM is: ");
+  Serial.println(value_test.c_str());
+
+  std::string value_test_2 = pCharacteristic_Temp_C->getValue();
+  Serial.print("Temperature in Celsius is: ");
+  Serial.println(value_test_2.c_str());
+
+  std::string value_test_3 = pCharacteristic_Humid->getValue();
+  Serial.print("Humidity in RH is: ");
+  Serial.println(value_test_3.c_str());
+
+  std::string value_test_4 = pCharacteristic_Motion->getValue();
+  Serial.print("Motion in True or False is: ");
+  Serial.println(value_test_4.c_str());
+}
